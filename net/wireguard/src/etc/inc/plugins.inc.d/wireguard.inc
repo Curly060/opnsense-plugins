@@ -32,6 +32,21 @@ function wireguard_enabled()
     return (string)$model->enabled == '1';
 }
 
+function wireguard_configure()
+{
+    return array(
+        'newwanip' => array('wireguard_configure_do'),
+    );
+}
+
+function wireguard_configure_do($verbose = false)
+{
+    if (!wireguard_enabled()) {
+        return;
+    }
+    configd_run("wireguard restart");
+}
+
 function wireguard_services()
 {
     $services = array();
