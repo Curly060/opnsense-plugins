@@ -29,6 +29,7 @@
 """
 import syslog
 import requests
+import csv
 from . import BaseAccount
 
 
@@ -66,16 +67,19 @@ class Netcup(BaseAccount):
 
             self.hostname, self.domain = self.settings['hostnames'].split('.', 1)
 
-            if self.settings['password'].count(':') > 1:
-                if self.settings['password'].count('\\:') == 1:
-                    self.settings['APIPassword'], self.settings['APIKey'] = self.settings['password'].split('\\:')
-            elif self.settings['password'].count(':') == 1:
-                self.settings['APIPassword'], self.settings['APIKey'] = self.settings['password'].split(':')
-
-            if self.settings['APIPassword'] is None or self.settings['APIKey'] is None:
+            if not ',' in self.settings['password']:
                 syslog.syslog(
                     syslog.LOG_ERR,
-                    "Unable to parse APIPassword:APIKey, when colons are used, make sure to escape the separator (\:)."
+                    "Invalid credentials. Expecting APIPassword,APIKey (in CSV style escaped form if needed)"
+                )
+                return False
+
+            self.settings['APIPassword'], self.settings['APIKey'] = list(csv.reader([self.settings['password']]))[0]
+
+            if not self.settings['APIPassword'] or not self.settings['APIKey']:
+                syslog.syslog(
+                    syslog.LOG_ERR,
+                    "Unable to parse APIPassword,APIKey. Make sure to use CSV style escaping if needed."
                 )
                 return False
 
